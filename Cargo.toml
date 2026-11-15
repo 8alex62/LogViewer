@@ -14,7 +14,7 @@ publish = false
 logviewer-core = { path = "core" }
 
 [workspace.lints.rust]
-unsafe_code = "deny"
+unsafe_code = "forbid"
 missing_debug_implementations = "warn"
 unused_qualifications = "warn"
 
