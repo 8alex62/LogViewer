@@ -1,0 +1,19 @@
+[package]
+name = "logviewer-server"
+description = "LogViewer core server: exposes logviewer-core over RPC to the UI clients."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license-file.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "logviewer-server"
+path = "src/main.rs"
+
+[dependencies]
+logviewer-core.workspace = true
+
+[lints]
+workspace = true
