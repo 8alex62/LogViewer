@@ -1,6 +1,7 @@
 # LogViewer
 
 [![Core CI](https://github.com/8alex62/LogViewer/actions/workflows/core.yml/badge.svg?branch=develop)](https://github.com/8alex62/LogViewer/actions/workflows/core.yml?query=branch%3Adevelop)
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=8alex62_LogViewer&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=8alex62_LogViewer)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 A fast, privacy-first viewer for large log files, on desktop (Windows, Linux) and in the browser.
