@@ -5,3 +5,5 @@
 pub mod browser;
 #[cfg(feature = "native")]
 pub mod native;
+
+pub mod memory;
