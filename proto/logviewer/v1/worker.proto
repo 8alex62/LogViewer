@@ -1,0 +1,23 @@
+// Web transport: the messages of logviewer.proto travel between the browser UI
+// and the Core Web Worker through `postMessage`, wrapped in an `Envelope`.
+syntax = "proto3";
+
+package logviewer.v1;
+
+option csharp_namespace = "LogViewer.Contract.V1";
+
+// One message between the UI and the Core worker.
+//
+// A unary call is one request envelope and one response envelope with the same
+// `request_id`. A server stream is several response envelopes with the same
+// `request_id`, the last one having `end_of_stream` set.
+message Envelope {
+  uint64 request_id = 1;
+  // RPC name, e.g. "GetLines".
+  string method = 2;
+  // Encoded request or response message of logviewer.proto.
+  bytes payload = 3;
+  bool end_of_stream = 4;
+  // Set instead of `payload` when the call failed.
+  string error = 5;
+}

@@ -1,5 +1,8 @@
 {
   "editor.formatOnSave": true,
   "explorer.fileNesting.enabled": true,
-  "explorer.fileNesting.expand": false
+  "explorer.fileNesting.expand": false,
+  // The Cargo workspace lives in core/, not at the repository root.
+  "rust-analyzer.linkedProjects": ["core/Cargo.toml"],
+  "rust-analyzer.check.command": "clippy"
 }

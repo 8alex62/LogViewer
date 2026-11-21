@@ -1,0 +1,25 @@
+[package]
+name = "logviewer-wasm"
+description = "LogViewer web entry point: the Core compiled to WebAssembly, running in a Web Worker."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license-file.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+# cdylib for the .wasm module, rlib so `cargo test` can link it natively.
+crate-type = ["cdylib", "rlib"]
+
+# Presentation (web): composition root, depends on every layer with the
+# `browser` reader. prost, js-sys / web-sys and the build.rs generating code
+# from /proto arrive with the web stories (v0.5).
+[dependencies]
+logviewer-domain.workspace = true
+logviewer-application.workspace = true
+logviewer-infrastructure = { workspace = true, features = ["browser"] }
+wasm-bindgen.workspace = true
+
+[lints]
+workspace = true
