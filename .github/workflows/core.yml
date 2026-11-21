@@ -1,0 +1,166 @@
+name: Core CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same branch / PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: 1
+
+defaults:
+  run:
+    # The Cargo workspace and rust-toolchain.toml live in core/.
+    working-directory: core
+
+jobs:
+  # Path filtering happens here rather than in `on:` so that the required
+  # "Core CI success" check always reports, even when the Core is untouched.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      rust: ${{ steps.filter.outputs.rust }}
+      proto: ${{ steps.filter.outputs.proto }}
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            rust:
+              - 'core/**'
+              - 'proto/**'
+              - '.github/workflows/core.yml'
+            proto:
+              - 'proto/**'
+              - 'buf.yaml'
+              - '.github/workflows/core.yml'
+
+  fmt:
+    name: Rustfmt
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Installs the toolchain pinned in core/rust-toolchain.toml.
+      - name: Install toolchain
+        run: rustup toolchain install
+      - name: cargo fmt --check
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        # Desktop targets of the specs: Windows and Linux (no macOS build).
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+          shared-key: ${{ matrix.os }}
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+
+  test:
+    name: Tests (${{ matrix.os }})
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+          shared-key: ${{ matrix.os }}
+      - name: cargo test
+        run: cargo test --workspace --all-features --locked
+
+  wasm:
+    name: WASM build
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # rust-toolchain.toml also installs the wasm32-unknown-unknown target.
+      - name: Install toolchain
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+          shared-key: wasm
+      - name: cargo clippy (wasm32)
+        run: cargo clippy -p logviewer-wasm --target wasm32-unknown-unknown --locked -- -D warnings
+      - name: cargo build (wasm32)
+        run: cargo build -p logviewer-wasm --target wasm32-unknown-unknown --locked
+
+  proto:
+    name: Proto lint
+    needs: changes
+    if: needs.changes.outputs.proto == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bufbuild/buf-action@v1
+        with:
+          lint: true
+          format: true
+          # Turn on once the first contract is on develop, to block breaking changes.
+          breaking: false
+          push: false
+
+  # Single stable check to require in the branch rulesets: the jobs above can
+  # evolve (or be skipped by the path filter) without editing the rulesets.
+  ci-success:
+    name: Core CI success
+    if: always()
+    needs: [changes, fmt, clippy, test, wasm, proto]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Check all jobs passed or were skipped by the path filter
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "Core CI passed."

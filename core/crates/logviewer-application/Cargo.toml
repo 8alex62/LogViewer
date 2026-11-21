@@ -1,0 +1,17 @@
+[package]
+name = "logviewer-application"
+description = "LogViewer application layer: use cases and the ports (traits) the infrastructure implements."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license-file.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+# Application rule: depends on the domain only (plus small, platform-neutral helpers).
+[dependencies]
+logviewer-domain.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

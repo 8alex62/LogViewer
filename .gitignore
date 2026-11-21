@@ -83,3 +83,7 @@ appsettings.*.local.json
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ---------- Repowise (local tooling) ----------
+.repowise/
+.vscode/mcp.json

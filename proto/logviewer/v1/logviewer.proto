@@ -1,0 +1,154 @@
+// LogViewer contract: the single source of truth shared by the Rust Core and
+// the C# client (specs §4.5, first draft).
+//
+// Desktop: served over gRPC by `logviewer-server`.
+// Web: the same messages travel through `postMessage`, wrapped in an
+// `Envelope` (see worker.proto).
+syntax = "proto3";
+
+package logviewer.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "LogViewer.Contract.V1";
+
+// The Core service.
+service LogViewerService {
+  // Opens a file by local path. Desktop only.
+  rpc OpenFile(OpenFileRequest) returns (OpenFileResponse);
+  // Opens a file picked in the browser; the `File` object is posted next to
+  // the envelope and read in place by the worker. Web only.
+  rpc OpenLocalFile(OpenLocalFileRequest) returns (OpenLocalFileResponse);
+  // Streams the progress of the background line indexing.
+  rpc GetIndexProgress(GetIndexProgressRequest) returns (stream GetIndexProgressResponse);
+  // Returns a page of lines, after filtering.
+  rpc GetLines(GetLinesRequest) returns (GetLinesResponse);
+  // Streams the matches of a search.
+  rpc Search(SearchRequest) returns (stream SearchResponse);
+  // Streams the entries appended to the file. Desktop only.
+  rpc Tail(TailRequest) returns (stream TailResponse);
+  // Releases the index and the file reference.
+  rpc CloseFile(CloseFileRequest) returns (CloseFileResponse);
+}
+
+// Severity of a log entry.
+enum LogLevel {
+  LOG_LEVEL_UNSPECIFIED = 0;
+  LOG_LEVEL_TRACE = 1;
+  LOG_LEVEL_DEBUG = 2;
+  LOG_LEVEL_INFO = 3;
+  LOG_LEVEL_WARN = 4;
+  LOG_LEVEL_ERROR = 5;
+  LOG_LEVEL_FATAL = 6;
+}
+
+// Detected or forced log file format.
+enum LogFormat {
+  LOG_FORMAT_UNSPECIFIED = 0;
+  LOG_FORMAT_PLAIN_TEXT = 1;
+  LOG_FORMAT_JSON_LINES = 2;
+  LOG_FORMAT_PATTERN = 3;
+  LOG_FORMAT_ACCESS_LOG = 4;
+}
+
+// An open file, as known by the Core.
+message FileHandle {
+  string id = 1;
+  LogFormat detected_format = 2;
+  // Size in bytes.
+  uint64 size = 3;
+}
+
+// One log entry.
+message LogEntry {
+  // Zero-based index of the first line of the entry.
+  uint64 line_number = 1;
+  // Raw text, without the line terminator.
+  string raw = 2;
+  LogLevel level = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  string source = 5;
+  string message = 6;
+}
+
+// Criteria applied before entries are returned. An empty filter keeps all.
+message Filter {
+  // Levels to keep; empty means every level.
+  repeated LogLevel levels = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  string text = 4;
+  // Whether `text` is a regular expression.
+  bool regex = 5;
+}
+
+message OpenFileRequest {
+  string path = 1;
+}
+
+message OpenFileResponse {
+  FileHandle file = 1;
+}
+
+message OpenLocalFileRequest {
+  string name = 1;
+  uint64 size = 2;
+}
+
+message OpenLocalFileResponse {
+  FileHandle file = 1;
+}
+
+message GetIndexProgressRequest {
+  string file_id = 1;
+}
+
+message GetIndexProgressResponse {
+  uint64 indexed_bytes = 1;
+  uint64 total_bytes = 2;
+  uint64 line_count = 3;
+  bool done = 4;
+}
+
+message GetLinesRequest {
+  string file_id = 1;
+  // Index of the first line of the page.
+  uint64 offset = 2;
+  uint32 count = 3;
+  Filter filter = 4;
+}
+
+// A page of lines (`LinesPage` in the specs).
+message GetLinesResponse {
+  // Number of lines matching the filter.
+  uint64 total_lines = 1;
+  repeated LogEntry entries = 2;
+}
+
+message SearchRequest {
+  string file_id = 1;
+  string query = 2;
+  Filter filter = 3;
+}
+
+// One search match (`Match` in the specs).
+message SearchResponse {
+  uint64 line_number = 1;
+  // Byte offset of the match within the line.
+  uint32 start = 2;
+  uint32 length = 3;
+}
+
+message TailRequest {
+  string file_id = 1;
+}
+
+message TailResponse {
+  LogEntry entry = 1;
+}
+
+message CloseFileRequest {
+  string file_id = 1;
+}
+
+message CloseFileResponse {}

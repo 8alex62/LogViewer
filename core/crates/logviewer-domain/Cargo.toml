@@ -1,6 +1,6 @@
 [package]
-name = "logviewer-server"
-description = "LogViewer core server: exposes logviewer-core over RPC to the UI clients."
+name = "logviewer-domain"
+description = "LogViewer domain layer: log entities (entry, level, format, filter). No external dependencies."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,12 +8,8 @@ license-file.workspace = true
 repository.workspace = true
 publish.workspace = true
 
-[[bin]]
-name = "logviewer-server"
-path = "src/main.rs"
-
+# Domain rule: no dependencies at all, not even internal ones.
 [dependencies]
-logviewer-core.workspace = true
 
 [lints]
 workspace = true

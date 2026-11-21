@@ -1,0 +1,24 @@
+[package]
+name = "logviewer-server"
+description = "LogViewer desktop sidecar: serves the Core over gRPC on loopback to the desktop UI."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license-file.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "logviewer-server"
+path = "src/main.rs"
+
+# Presentation (desktop): composition root, depends on every layer with the
+# `native` reader. tokio, tonic, prost and the build.rs generating code from
+# /proto arrive with the US "Serve file lines over gRPC".
+[dependencies]
+logviewer-domain.workspace = true
+logviewer-application.workspace = true
+logviewer-infrastructure = { workspace = true, features = ["native"] }
+
+[lints]
+workspace = true
