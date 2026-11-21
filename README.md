@@ -103,6 +103,8 @@ cargo clippy -p logviewer-wasm --target wasm32-unknown-unknown -- -D warnings
 
 Coverage uses [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov) (`cargo install cargo-llvm-cov`, `rustup component add llvm-tools-preview`). `cargo llvm-cov --workspace --all-features --open` opens the HTML report; the CI sends the LCOV report to SonarCloud.
 
+Dependencies are checked with [cargo-deny](https://github.com/EmbarkStudios/cargo-deny) (`cargo install cargo-deny`, then `cargo deny check`): RustSec advisories, licenses compatible with Apache-2.0, duplicate crates and sources, as set in `core/deny.toml`. Dependabot opens weekly update PRs against `develop` for Cargo and GitHub Actions.
+
 Test a single crate with `cargo test -p logviewer-infrastructure`. Lint the contract from the repository root with `buf lint`.
 
 ## Contributing
