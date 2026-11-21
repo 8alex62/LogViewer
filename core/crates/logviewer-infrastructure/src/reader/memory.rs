@@ -1,7 +1,7 @@
 use logviewer_application::ports::{LogSource, SourceError};
 
 /// In-memory implementation of [`LogSource`].
-///  Used for testing and as a fallback when no other source is available.
+/// Used for testing and as a fallback when no other source is available.
 #[derive(Debug)]
 pub struct MemorySource(Vec<u8>);
 
@@ -61,7 +61,7 @@ mod tests {
         assert!(!source().is_empty());
     }
 
-    // ---------- lectures nominales ----------
+    // ---------- regular reads ----------
 
     #[test]
     fn reads_everything_when_the_buffer_is_exactly_the_right_size() -> Result<(), SourceError> {
@@ -106,13 +106,13 @@ mod tests {
     #[test]
     fn returns_a_short_read_near_the_end() -> Result<(), SourceError> {
         let mut buf = [0u8; 8];
-        let n = source().read_at(8, &mut buf)?; // il ne reste que "rld"
+        let n = source().read_at(8, &mut buf)?; // only "rld" is left
         assert_eq!(n, 3);
         assert_eq!(&buf[..n], b"rld");
         Ok(())
     }
 
-    // ---------- fin de source et cas limites ----------
+    // ---------- end of source and edge cases ----------
 
     #[test]
     fn returns_zero_at_exactly_the_end() -> Result<(), SourceError> {
@@ -147,7 +147,7 @@ mod tests {
         Ok(())
     }
 
-    // ---------- comportement « positionnel » ----------
+    // ---------- positional behavior ----------
 
     #[test]
     fn reading_does_not_move_any_cursor() -> Result<(), SourceError> {
@@ -161,7 +161,7 @@ mod tests {
 
     #[test]
     fn chunked_reads_rebuild_the_whole_content() -> Result<(), SourceError> {
-        // Simule la future boucle de l'index : lire par blocs jusqu'à obtenir 0.
+        // Mimics the future line index loop: read by chunks until 0 is returned.
         let src = source();
         let mut out = Vec::new();
         let mut buf = [0u8; 3];
