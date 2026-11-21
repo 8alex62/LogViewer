@@ -3,7 +3,7 @@
 ## Branch model
 
 - `develop` is the integration branch: every pull request targets it.
-- `main` only receives releases, merged from `develop`.
+- `main` only receives releases, merged from `develop` with **Create a merge commit** (never squash, or `main` and `develop` diverge). The *Only develop into main* check blocks pull requests into `main` from any other branch.
 - Work branches start from `develop` and carry the Fibery id: `feat/US-xx-short-name`, `feat/T-xx-short-name` or `fix/I-xx-short-name`.
 
 ## Commit messages
