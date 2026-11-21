@@ -1,0 +1,28 @@
+# Weekly dependency updates. Pull requests target develop (main only receives
+# releases) and follow the gitmoji commit convention of CONTRIBUTING.md.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /core
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "⬆️ build(core):"
+    groups:
+      # One PR for all minor and patch bumps; majors get their own PR.
+      cargo-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: "⬆️ ci:"
+    groups:
+      actions:
+        patterns: ["*"]

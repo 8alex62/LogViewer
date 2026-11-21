@@ -112,6 +112,20 @@ jobs:
       - name: cargo test
         run: cargo test --workspace --all-features --locked
 
+  # Dependency policy (core/deny.toml): RustSec advisories, licenses
+  # compatible with Apache-2.0, duplicate crates, allowed sources.
+  deny:
+    name: cargo-deny
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@17aeb3c839e42274e2b8adf721c8c65edfdc74dd # v2.1.3
+        with:
+          manifest-path: core/Cargo.toml
+          command: check advisories bans licenses sources
+
   # Line and branch coverage of the Core, sent to SonarCloud with the code
   # analysis. Pull requests run it only when the Core changes; pushes to
   # main/develop always run it so the branch analysis stays complete.
@@ -199,7 +213,7 @@ jobs:
   ci-success:
     name: Core CI success
     if: always()
-    needs: [changes, fmt, clippy, test, coverage, wasm, proto]
+    needs: [changes, fmt, clippy, test, deny, coverage, wasm, proto]
     runs-on: ubuntu-latest
     defaults:
       run:
