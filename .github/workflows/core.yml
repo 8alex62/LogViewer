@@ -167,6 +167,12 @@ jobs:
       - name: SonarCloud scan
         if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
+        with:
+          # Absolute path: the scanner splits the Cargo workspace into one
+          # module per crate and resolves relative report paths from each
+          # crate's folder, where core/lcov.info does not exist.
+          args: >
+            -Dsonar.rust.lcov.reportPaths=${{ github.workspace }}/core/lcov.info
 
   wasm:
     name: WASM build
