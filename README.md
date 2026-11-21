@@ -101,6 +101,8 @@ cargo test --workspace --all-features
 cargo clippy -p logviewer-wasm --target wasm32-unknown-unknown -- -D warnings
 ```
 
+Coverage uses [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov) (`cargo install cargo-llvm-cov`, `rustup component add llvm-tools-preview`). `cargo llvm-cov --workspace --all-features --open` opens the HTML report; the CI sends the LCOV report to SonarCloud.
+
 Test a single crate with `cargo test -p logviewer-infrastructure`. Lint the contract from the repository root with `buf lint`.
 
 ## Contributing

@@ -112,6 +112,48 @@ jobs:
       - name: cargo test
         run: cargo test --workspace --all-features --locked
 
+  # Line and branch coverage of the Core, sent to SonarCloud with the code
+  # analysis. Pull requests run it only when the Core changes; pushes to
+  # main/develop always run it so the branch analysis stays complete.
+  coverage:
+    name: Coverage & SonarCloud
+    needs: changes
+    if: needs.changes.outputs.rust == 'true' || github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      # Job-level so the scan step can test it in its `if`.
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # SonarCloud needs the full history for blame and new-code detection.
+          fetch-depth: 0
+      - name: Install toolchain
+        run: |
+          rustup toolchain install
+          rustup component add llvm-tools-preview
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: core
+          shared-key: coverage
+      - uses: taiki-e/install-action@25f51f6b1bf4e18876107cece836f4f77ac17c8c # v2.90.7
+        with:
+          tool: cargo-llvm-cov
+      - name: cargo llvm-cov
+        run: |
+          cargo llvm-cov --workspace --all-features --locked --lcov --output-path lcov.info
+          cargo llvm-cov report --summary-only
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-coverage
+          path: core/lcov.info
+          retention-days: 7
+      # Secrets are not exposed to fork or Dependabot pull requests: skip the
+      # scan there instead of failing.
+      - name: SonarCloud scan
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
+
   wasm:
     name: WASM build
     needs: changes
@@ -157,7 +199,7 @@ jobs:
   ci-success:
     name: Core CI success
     if: always()
-    needs: [changes, fmt, clippy, test, wasm, proto]
+    needs: [changes, fmt, clippy, test, coverage, wasm, proto]
     runs-on: ubuntu-latest
     defaults:
       run:

@@ -55,6 +55,7 @@ coverage/
 coverage*.json
 coverage*.xml
 coverage*.info
+lcov.info
 *.trx
 
 # ---------- User / IDE files ----------
