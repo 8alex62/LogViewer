@@ -1,0 +1,6 @@
+[toolchain]
+channel = "1.100.0"
+components = ["rustfmt", "clippy"]
+# Native targets come with the host toolchain; the web build needs WASM.
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"

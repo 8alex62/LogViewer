@@ -1,3 +1,7 @@
 * text=auto eol=lf
 *.rs text eol=lf
 *.toml text eol=lf
+*.proto text eol=lf
+
+# Sample logs are test data (LF, CRLF, no trailing newline…): never convert them.
+samples/** -text

@@ -1,0 +1,25 @@
+[package]
+name = "logviewer-infrastructure"
+description = "LogViewer infrastructure layer: line index, parsers, format detection and platform readers."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license-file.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+# Infrastructure rule: implements the application ports; may depend on domain
+# and application, never on a presentation crate.
+[dependencies]
+logviewer-domain.workspace = true
+logviewer-application.workspace = true
+
+[features]
+default = []
+# Desktop file reader (memmap2, and notify for tailing, added with their stories).
+native = []
+# Browser file reader (web-sys Blob.slice + FileReaderSync, added with its story).
+browser = []
+
+[lints]
+workspace = true
