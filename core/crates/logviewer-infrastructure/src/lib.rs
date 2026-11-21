@@ -14,5 +14,4 @@ pub mod parsers;
 pub mod reader;
 
 // Layers wired in advance; the imports go once real code uses them.
-use logviewer_application as _;
 use logviewer_domain as _;
