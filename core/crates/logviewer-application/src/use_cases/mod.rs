@@ -4,3 +4,7 @@
 //!
 //! The first ones (`OpenFile`, `GetLines`) arrive with the US "Read a plain
 //! text file and return lines by range".
+
+mod get_lines;
+
+pub use get_lines::{GetLinesError, LinesPage, get_lines};
