@@ -5,6 +5,7 @@
 //! `Blob.slice` in the browser), selected by the presentation crate.
 
 use logviewer_domain::LogEntry;
+use std::ops::Range;
 
 /// Random-access, read-only source of bytes (a log file).
 ///
@@ -26,6 +27,23 @@ pub trait LogSource {
 /// Turns the raw text of an entry into a structured [`LogEntry`].
 pub trait LogParser {
     fn parse(&self, line_number: u64, raw: &str) -> LogEntry;
+}
+
+/// Maps line numbers to byte ranges of a [`LogSource`].
+///
+/// An indexer follows a single source: always pass it the same one.
+pub trait LineIndexer {
+    /// Scans the bytes added since the previous call and returns the number
+    /// of lines completed by this call.
+    fn extend(&mut self, source: &dyn LogSource) -> Result<u64, SourceError>;
+
+    /// Number of lines, including a last line without a trailing `\n`.
+    fn line_count(&self) -> u64;
+
+    /// Byte range of a line without its `\n`, or `None` past the last line.
+    ///
+    /// The source is provided because a sparse index has to read it.
+    fn locate(&self, source: &dyn LogSource, line: u64) -> Result<Option<Range<u64>>, SourceError>;
 }
 
 /// Errors raised by a [`LogSource`].
