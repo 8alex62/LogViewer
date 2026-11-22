@@ -27,7 +27,7 @@ flowchart LR
 | Layer | Crate | Responsibility | May depend on |
 |---|---|---|---|
 | Domain | `logviewer-domain` | Entities: `LogEntry`, `LogLevel`, `LogFormat`, `Filter` | nothing |
-| Application | `logviewer-application` | Use cases (`OpenFile`, `GetLines`, `Filter`, `Search`, `Tail`) and ports (`LogSource`, `LogParser`) | domain |
+| Application | `logviewer-application` | Use cases (`OpenFile`, `GetLines`, `Filter`, `Search`, `Tail`) and ports (`LogSource`, `LogParser`, `LineIndexer`) | domain |
 | Infrastructure | `logviewer-infrastructure` | Line index, parsers, format detection; readers behind features `native` / `browser` | application, domain |
 | Presentation (desktop) | `logviewer-server` (bin) | gRPC (tonic), token check, proto ↔ domain mapping, composition root | all, `native` |
 | Presentation (web) | `logviewer-wasm` (cdylib) | `wasm-bindgen` entry point, envelope dispatch, proto ↔ domain mapping, composition root | all, `browser` |

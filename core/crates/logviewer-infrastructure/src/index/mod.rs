@@ -1,4 +1,4 @@
-use logviewer_application::ports::{LogSource, SourceError};
+use logviewer_application::ports::{LineIndexer, LogSource, SourceError};
 use std::ops::Range;
 
 /// Size of the blocks read while scanning the source.
@@ -14,33 +14,6 @@ pub struct LineIndex {
 }
 
 impl LineIndex {
-    /// Scans the source from where the previous call stopped and returns
-    /// the number of lines completed by this call.
-    pub fn extend(&mut self, source: &dyn LogSource) -> Result<u64, SourceError> {
-        let mut buf = vec![0u8; CHUNK_SIZE];
-        let mut lines_found = 0;
-
-        loop {
-            let n = source.read_at(self.scanned_up_to, &mut buf)?;
-            if n == 0 {
-                break;
-            }
-            for (i, &b) in buf[..n].iter().enumerate() {
-                if b == b'\n' {
-                    self.line_ends.push(self.scanned_up_to + i as u64 + 1);
-                    lines_found += 1;
-                }
-            }
-            self.scanned_up_to += n as u64;
-        }
-        Ok(lines_found)
-    }
-
-    /// Number of lines, including a last line without a trailing `\n`.
-    pub fn line_count(&self) -> u64 {
-        self.line_ends.len() as u64 + u64::from(self.has_pending_line())
-    }
-
     /// Whether bytes follow the last `\n` (a line still being written when tailing).
     pub fn has_pending_line(&self) -> bool {
         self.line_ends.last().copied().unwrap_or(0) < self.scanned_up_to
@@ -62,11 +35,48 @@ impl LineIndex {
     }
 }
 
+impl LineIndexer for LineIndex {
+    /// Scans the source from where the previous call stopped and returns
+    /// the number of lines completed by this call.
+    fn extend(&mut self, source: &dyn LogSource) -> Result<u64, SourceError> {
+        let mut buf = vec![0u8; CHUNK_SIZE];
+        let mut lines_found = 0;
+
+        loop {
+            let n = source.read_at(self.scanned_up_to, &mut buf)?;
+            if n == 0 {
+                break;
+            }
+            for (i, &b) in buf[..n].iter().enumerate() {
+                if b == b'\n' {
+                    self.line_ends.push(self.scanned_up_to + i as u64 + 1);
+                    lines_found += 1;
+                }
+            }
+            self.scanned_up_to += n as u64;
+        }
+        Ok(lines_found)
+    }
+
+    /// Number of lines, including a last line without a trailing `\n`.
+    fn line_count(&self) -> u64 {
+        self.line_ends.len() as u64 + u64::from(self.has_pending_line())
+    }
+
+    fn locate(
+        &self,
+        _source: &dyn LogSource,
+        line: u64,
+    ) -> Result<Option<Range<u64>>, SourceError> {
+        Ok(self.line_range(line))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{CHUNK_SIZE, LineIndex};
     use crate::reader::memory::MemorySource;
-    use logviewer_application::ports::SourceError;
+    use logviewer_application::ports::{LineIndexer, SourceError};
 
     fn index_of(bytes: &[u8]) -> Result<LineIndex, SourceError> {
         let mut index = LineIndex::default();
@@ -199,6 +209,20 @@ mod tests {
         index.extend(&source)?;
         assert_eq!(index.extend(&source)?, 0);
         assert_eq!(index.line_count(), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn works_through_the_port() -> Result<(), SourceError> {
+        let source = MemorySource::new(b"ab\ncd".to_vec());
+        let mut index = LineIndex::default();
+        let indexer: &mut dyn LineIndexer = &mut index;
+
+        assert_eq!(indexer.extend(&source)?, 1);
+        assert_eq!(indexer.line_count(), 2);
+        assert_eq!(indexer.locate(&source, 0)?, Some(0..2));
+        assert_eq!(indexer.locate(&source, 1)?, Some(3..5));
+        assert_eq!(indexer.locate(&source, 2)?, None);
         Ok(())
     }
 }
