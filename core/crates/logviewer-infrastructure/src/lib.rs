@@ -12,6 +12,3 @@ pub mod detection;
 pub mod index;
 pub mod parsers;
 pub mod reader;
-
-// Layers wired in advance; the imports go once real code uses them.
-use logviewer_domain as _;
